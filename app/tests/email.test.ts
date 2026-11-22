@@ -82,6 +82,10 @@ describe('SMTP delivery', () => {
     createSmtpTransport({ ...opts, port: 587 }, f.factory)
     expect(f.created[0]).toMatchObject({ port: 587, secure: false, requireTLS: true })
   })
+  test('settings: on Render the public URL comes from RENDER_EXTERNAL_URL unless APP_URL is set', () => {
+    expect(loadEnv({ RENDER_EXTERNAL_URL: 'https://meridian.onrender.com' }).APP_URL).toBe('https://meridian.onrender.com')
+    expect(loadEnv({ RENDER_EXTERNAL_URL: 'https://meridian.onrender.com', APP_URL: 'https://app.example.com' }).APP_URL).toBe('https://app.example.com')
+  })
   test('settings: smtp needs a user and password; production accepts smtp as a real transport', () => {
     expect(() => loadEnv({ MAIL_TRANSPORT: 'smtp' })).toThrow(/SMTP_USER and SMTP_PASSWORD/)
     expect(loadEnv({ MAIL_TRANSPORT: 'smtp', SMTP_USER: 'a@example.test', SMTP_PASSWORD: 'p' })).toMatchObject({ SMTP_HOST: 'smtp.gmail.com', SMTP_PORT: 465 })

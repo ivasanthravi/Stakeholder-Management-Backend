@@ -53,7 +53,8 @@ export function loadEnv(source?: Record<string, string | undefined>): Env {
   // The API has its own port variable so tools that set PORT for the web dev server don't collide with it.
   // In production one process serves app and API, so PORT is honoured there.
   const port = source.API_PORT ?? (source.NODE_ENV === 'production' ? source.PORT : undefined)
-  const env = schema.parse({ ...source, PORT: port })
+  // On Render, the public https address arrives as RENDER_EXTERNAL_URL; an explicit APP_URL (e.g. a custom domain) wins.
+  const env = schema.parse({ ...source, PORT: port, APP_URL: source.APP_URL ?? source.RENDER_EXTERNAL_URL })
   if (env.MAIL_TRANSPORT === 'smtp' && (!env.SMTP_USER || !env.SMTP_PASSWORD)) throw new Error('SMTP_USER and SMTP_PASSWORD are required when MAIL_TRANSPORT=smtp')
   if (env.NODE_ENV === 'production') {
     if (env.MAIL_TRANSPORT === 'postmark' && !env.POSTMARK_SERVER_TOKEN) throw new Error('POSTMARK_SERVER_TOKEN is required when MAIL_TRANSPORT=postmark')
