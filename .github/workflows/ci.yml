@@ -1,11 +1,13 @@
-# CI release gate. Mirrors app/scripts/release-gate.sh (run that locally). Not yet executed on GitHub: this repository
-# has no remote configured — see docs/launch/deployment-runbook.md.
+# CI release gate. Mirrors app/scripts/release-gate.sh (run that locally).
 name: ci
 on:
   push: { branches: [main] }
   pull_request:
 permissions: { contents: read }
-concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+# Block style: a `${{ }}` expression inside a one-line `{ }` mapping is invalid YAML (GitHub rejects the whole file).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 defaults: { run: { working-directory: app } }
 jobs:
   verify:
