@@ -13,7 +13,8 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
-  reporter: [['list'], ['json', { outputFile: 'test-results/e2e.json' }]],
+  // On CI the github reporter also posts each failure as an annotation on the run (readable without signing in).
+  reporter: [...(process.env.CI ? [['github'] as const] : []), ['list'], ['json', { outputFile: 'test-results/e2e.json' }]],
   use: { baseURL: target ?? `http://localhost:${WEB_PORT}`, ignoreHTTPSErrors: !!target, channel: 'chrome', viewport: { width: 1440, height: 900 }, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: target ? [] : [
     // The test API never uses a developer's .env database or mail service: empty DATABASE_URL means its own PGlite
