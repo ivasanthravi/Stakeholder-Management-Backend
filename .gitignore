@@ -2,3 +2,5 @@
 *.tsbuildinfo
 *.log
 .claude/settings.local.json
+.netlify/
+deploy.json

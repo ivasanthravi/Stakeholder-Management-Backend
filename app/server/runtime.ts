@@ -19,15 +19,19 @@ export function registerJobs(deps: Deps) {
 
 const HOUR = 3_600_000
 /** Enqueues recurring jobs; the dedupe key per time bucket keeps several processes from doubling them. */
+/** Enqueues the recurring jobs due in the current time bucket; the dedupe key per bucket keeps repeats from doubling them. */
+export async function enqueueRecurring(jobs: NonNullable<Deps['jobs']>) {
+  const bucket = (ms: number) => Math.floor(Date.now() / ms)
+  await jobs.enqueue('billing.trials', {}, { dedupeKey: `billing.trials:${bucket(HOUR)}` })
+  await jobs.enqueue('billing.reconcile', {}, { dedupeKey: `billing.reconcile:${bucket(24 * HOUR)}` })
+  for (const extra of scheduled) await jobs.enqueue(extra.kind, {}, { dedupeKey: `${extra.kind}:${bucket(extra.everyMs)}` })
+}
+
+/** Long-running processes: enqueue recurring jobs every 10 minutes and run the worker loop. */
 export function startSchedule(deps: Deps) {
   const jobs = deps.jobs!
-  const bucket = (ms: number) => Math.floor(Date.now() / ms)
   const tick = async () => {
-    try {
-      await jobs.enqueue('billing.trials', {}, { dedupeKey: `billing.trials:${bucket(HOUR)}` })
-      await jobs.enqueue('billing.reconcile', {}, { dedupeKey: `billing.reconcile:${bucket(24 * HOUR)}` })
-      for (const extra of scheduled) await jobs.enqueue(extra.kind, {}, { dedupeKey: `${extra.kind}:${bucket(extra.everyMs)}` })
-    } catch (e) { log('warn', 'schedule tick failed', errorFields(e)) }
+    try { await enqueueRecurring(jobs) } catch (e) { log('warn', 'schedule tick failed', errorFields(e)) }
   }
   void tick()
   const timer = setInterval(tick, 10 * 60_000)

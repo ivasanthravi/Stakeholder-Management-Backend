@@ -1,0 +1,38 @@
+# Netlify: the React app is served as static files from app/dist; /api/* runs the Hono API as a function
+# (app/netlify/functions/api.ts) and background jobs run every 10 minutes (app/netlify/functions/jobs.ts).
+# Deploys come from GitHub Actions (.github/workflows/ci.yml) after every check passes, not from Netlify's own builds.
+# Secrets (DATABASE_URL, AUTH_SECRET, SMTP_*, …) are set in the Netlify dashboard, never here. See docs/launch/netlify-deploy.md.
+[build]
+  base = "app"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # Development-only database engine and an optional native driver; neither is used when DATABASE_URL is set.
+  external_node_modules = ["@electric-sql/pglite", "pg-native"]
+
+# Single-page app: every path that isn't a file or /api/* loads index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The API sets its own security headers; these cover the static pages (same policy as the Node server).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    Strict-Transport-Security = "max-age=15552000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

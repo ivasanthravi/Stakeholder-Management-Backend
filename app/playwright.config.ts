@@ -16,7 +16,9 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'test-results/e2e.json' }]],
   use: { baseURL: target ?? `http://localhost:${WEB_PORT}`, ignoreHTTPSErrors: !!target, channel: 'chrome', viewport: { width: 1440, height: 900 }, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: target ? [] : [
-    { command: `API_PORT=${API_PORT} APP_URL=http://localhost:${WEB_PORT} PGLITE_DIR=${dir} npx tsx server/index.ts`, url: `http://localhost:${API_PORT}/api/health`, reuseExistingServer: false, timeout: 60_000 },
+    // The test API never uses a developer's .env database or mail service: empty DATABASE_URL means its own PGlite
+    // directory, and the log transport keeps every email in the outbox the tests read (no real mail is sent).
+    { command: `DATABASE_URL= MAIL_TRANSPORT=log API_PORT=${API_PORT} APP_URL=http://localhost:${WEB_PORT} PGLITE_DIR=${dir} npx tsx server/index.ts`, url: `http://localhost:${API_PORT}/api/health`, reuseExistingServer: false, timeout: 60_000 },
     { command: `VITE_PORT=${WEB_PORT} API_PORT=${API_PORT} npx vite`, url: `http://localhost:${WEB_PORT}`, reuseExistingServer: false, timeout: 60_000 },
   ],
 })

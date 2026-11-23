@@ -21,11 +21,11 @@ export interface Database {
  * Production: `DATABASE_URL` → node-postgres pool.
  * Development/test: PGlite (Postgres compiled to WASM) — persisted to `dataDir`, or in-memory when omitted.
  */
-export async function createDatabase(opts: { url?: string; dataDir?: string }): Promise<Database> {
+export async function createDatabase(opts: { url?: string; dataDir?: string; poolMax?: number }): Promise<Database> {
   if (opts.url) {
     const { Pool } = await import('pg')
     const { drizzle } = await import('drizzle-orm/node-postgres')
-    const pool = new Pool({ connectionString: opts.url, max: 10 })
+    const pool = new Pool({ connectionString: opts.url, max: opts.poolMax ?? 10 })
     return { db: drizzle(pool, { schema }) as unknown as DB, kind: 'postgres', close: () => pool.end() }
   }
   const { PGlite } = await import('@electric-sql/pglite')
